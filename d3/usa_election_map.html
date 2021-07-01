@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang = "en">
+<head>
+<meta charset="utf-8">
+
+<script src = "https://d3js.org/d3.v3.min.js"></script> 
+<script src = "https://d3js.org/topojson.v1.min.js"></script>
+
+<title>us election map</title>
+<style type="text/css">
+
+path {
+  fill: #ccc;
+  stroke: #fff;
+  stroke-linejoin: round;
+}
+
+</style>
+</head>
+<body>
+<svg width="960" height="500"></svg>
+<script type = "text/javascript">
+var url = "https://raw.githubusercontent.com/jaredvanblitterswyk/d3_data_viz/main/us.json"
+
+d3.json(url, function(error, us) {
+  if (error) throw error;
+
+  d3.select("svg").append("path")
+      .datum(topojson.feature(us, us.objects.states))
+      .attr("d", d3.geo.path());
+});
+
+</script>
+</body>
+</html>

@@ -1,5 +1,6 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
+cali_homes_env/
 .ipynb_checkpoints/
 *.py[cod]
 *$py.class

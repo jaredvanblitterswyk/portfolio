@@ -2,6 +2,7 @@
 __pycache__/
 cali_homes_env/
 in_progress/
+d3/
 .ipynb_checkpoints/
 *.py[cod]
 *$py.class

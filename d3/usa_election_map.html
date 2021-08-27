@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang = "en">
+<head>
+<meta charset="utf-8">
+
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="https://unpkg.com/topojson@3"></script>
+<script src="https://unpkg.com/d3-simple-slider"></script>
+<title>us election map</title>
+
+<header>
+	<h1>US Election Results By State </h1>
+</header>
+
+<div class="container">
+  <div class="row align-items-center">
+	<div class="col-sm-3"><div id="pvalue-time"></div></div>
+	<div class="col-sm-2"><div id="slider-time"></div></div>
+	<div class="col-sm-m"><div id="us-map"></div></div>
+  </div>
+</div>
+
+<style type="text/css">
+/* Overlay of US states from: https://bl.ocks.org/mbostock/2869946 */
+/* Fill in with colour based on modified script from: http://bl.ocks.org/michellechandra/0b2ce4923dc9b5809922 */
+/* election data scraped from https://en.wikipedia.org/wiki/List_of_United_States_presidential_election_results_by_state#Analytical_table*/
+</style>
+</head>
+<body>
+
+<script>
+
+var url = "https://raw.githubusercontent.com/jaredvanblitterswyk/d3_data_viz/main/states-10m.json"
+var url_results = "https://raw.githubusercontent.com/jaredvanblitterswyk/d3_data_viz/main/us_election_results_by_state_cleaned_2020.csv"
+// Define linear scale for results based on party
+// [Democratic, Republican, Independent, State's Rights, American Independent, Progressive, Not a state]
+
+var color = d3.scaleLinear()
+			  .range(["rgb(36,73,153)","rgb(209,37,49)","rgb(84,36,55)","rgb(217,91,67)"]);
+
+// Define legend text
+var legendText = ["Democratic", "Republican", "Independent", "State's Rights", "American Independent", "Progressive", "Not a State"]
+
+var svg = d3.select('#us-map')
+			.append('svg')
+				.attr('width',1060)
+				.attr('height',650)
+				.attr('fill', "none")
+				.attr('stroke', "#000")
+				.attr('stroke-linejoin', "round");;
+
+var projection = d3.geoAlbersUsa()
+			   .translate([500, 250]) // translate to center of screen
+			   .scale([1060]); // scale things down so see entire US
+	
+// Define path generator - require projection for unprojected data
+var path = d3.geoPath() // path generator that will convert GeoJSON to SVG paths
+		 .projection(projection); // tell path generator to use albersUsa projection
+		 
+		 
+// Load in my states data!
+d3.csv(url_results, function(data) {
+	color.domain([0,1]); // setting the range of the input data
+	// Loop through each state data value in the .csv file
+
+// add us map based on: https://stackoverflow.com/questions/54335495/geoalbersusa-projection-not-mapping-as-expected
+d3.json(url, function(error, us) {
+  if (error) throw error;
+	for (var i = 0; i < data.length; i++) {
+
+	// Grab State Name
+	var dataState = data[i].state;
+	var dataValue = data[i].voted;
+	
+	//var stateFeatures = console.log(topojson.feature(us, us.objects.states).features);
+	// Find the corresponding state inside the GeoJSON
+	for (var j = 0; j < topojson.feature(us, us.objects.states).features.length; j++)  {
+		var jsonState = topojson.feature(us, us.objects.states).features[j].properties.name;
+
+		if (dataState == jsonState) {
+			// Copy the data value into the JSON
+			topojson.feature(us, us.objects.states).features.properties.voted = dataValue; 
+			break;
+			}
+		}
+	}
+	
+	svg.append("path")
+		.attr("d", path(topojson.feature(us, us.objects.nation)));		
+		
+	svg.append("path")
+		.data(topojson.feature(us, us.objects.states).features)
+		.attr("stroke-width", 0.5)
+		.attr("d", path(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; })))
+		.style("fill", function(d) {
+		// Get data value
+		//var value = topojson.feature(d, d.objects.states).features.properties.voted
+		var value = d.properties.voted
+		if (value) {
+		//If value exists…
+		return color(value);
+		} else {
+		//If value is undefined…
+		return "rgb(213,222,217)";
+		}
+		});
+		
+	
+		
+});
+});
+	
+/* SET SLIDER BAR PROPERTIES */
+// Add slider (https://bl.ocks.org/johnwalley/e1d256b81e51da68f7feb632a53c3518)
+  var dataTime = d3.range(0, 106).map(function(d) {
+    return new Date(1915 + d, 20, 3);
+  });
+
+  var sliderTime = d3
+    .sliderBottom()
+    .min(d3.min(dataTime))
+    .max(d3.max(dataTime))
+    .step(4*1000 * 60 * 60 * 24 * 365) // increment by 4 years
+    .width(750)
+    .tickFormat(d3.timeFormat('%Y'))
+    .default(new Date(1916, 10, 3)) // start at 1916
+    .on('onchange', val => {
+      d3.select('p#value-time').text(d3.timeFormat('%Y')(val));
+    });
+		
+	// Add time label outside slider
+  var gTime = d3
+    .select('div#slider-time')
+    .append('svg')
+    .attr('width', 1200)
+    .attr('height', 150)
+    .append('g')
+    .attr('transform', 'translate(50,50)');
+
+  gTime.call(sliderTime);
+
+</script>
+</body>
+</html>
